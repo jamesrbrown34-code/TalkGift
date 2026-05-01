@@ -27,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -80,6 +81,13 @@ class MainActivity : ComponentActivity() {
                             )
                         )
                         parsedDraftState.value = ParsedGiftDraft.empty()
+                    },
+                    onUpdateGift = { updatedGift ->
+                        val index = gifts.indexOfFirst { it.id == updatedGift.id }
+                        if (index >= 0) gifts[index] = updatedGift
+                    },
+                    onDeleteGift = { giftId ->
+                        gifts.removeAll { it.id == giftId }
                     }
                 )
             }
@@ -102,7 +110,9 @@ private fun GiftCaptureApp(
     parsedDraft: ParsedGiftDraft,
     onStartCapture: () -> Unit,
     onDraftChange: (ParsedGiftDraft) -> Unit,
-    onSaveDraft: (ParsedGiftDraft) -> Unit
+    onSaveDraft: (ParsedGiftDraft) -> Unit,
+    onUpdateGift: (Gift) -> Unit,
+    onDeleteGift: (Int) -> Unit
 ) {
     var selectedPerson by remember { mutableStateOf<Person?>(null) }
     var selectedGift by remember { mutableStateOf<Gift?>(null) }
@@ -121,7 +131,19 @@ private fun GiftCaptureApp(
             selectedPerson?.let { person ->
                 GiftList(person = person, gifts = gifts.filter { it.personId == person.id }, onSelect = { selectedGift = it })
             }
-            selectedGift?.let { GiftDetail(it) }
+            selectedGift?.let {
+                GiftDetail(
+                    gift = it,
+                    onUpdateGift = { updated ->
+                        onUpdateGift(updated)
+                        selectedGift = updated
+                    },
+                    onDeleteGift = { giftId ->
+                        onDeleteGift(giftId)
+                        selectedGift = null
+                    }
+                )
+            }
         }
     }
 }
@@ -188,7 +210,7 @@ private fun PersonList(people: List<Person>, gifts: List<Gift>, onSelect: (Perso
 @Composable
 private fun GiftList(person: Person, gifts: List<Gift>, onSelect: (Gift) -> Unit) {
     Text("${person.name}'s gifts", style = MaterialTheme.typography.titleMedium)
-    LazyColumn(modifier = Modifier.height(140.dp)) {
+    LazyColumn {
         items(gifts) { gift ->
             Row(
                 modifier = Modifier
@@ -198,19 +220,59 @@ private fun GiftList(person: Person, gifts: List<Gift>, onSelect: (Gift) -> Unit
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(gift.title)
-                Text(gift.eventType)
+                Text(gift.status.name.lowercase().replaceFirstChar { it.uppercase() })
             }
         }
     }
 }
 
 @Composable
-private fun GiftDetail(gift: Gift) {
+private fun GiftDetail(gift: Gift, onUpdateGift: (Gift) -> Unit, onDeleteGift: (Int) -> Unit) {
     val context = LocalContext.current
     val query = QueryBuilder.build(gift.title, gift.budget)
+    var editableTitle by remember(gift.id) { mutableStateOf(gift.title) }
+    var editableEvent by remember(gift.id) { mutableStateOf(gift.eventType) }
+    var editableBudget by remember(gift.id) { mutableStateOf(gift.budget?.toString().orEmpty()) }
+    var editableComments by remember(gift.id) { mutableStateOf(gift.comments) }
+    var selectedStatus by remember(gift.id) { mutableStateOf(gift.status) }
+
+    LaunchedEffect(gift) {
+        editableTitle = gift.title
+        editableEvent = gift.eventType
+        editableBudget = gift.budget?.toString().orEmpty()
+        editableComments = gift.comments
+        selectedStatus = gift.status
+    }
+
     Text("Gift detail", style = MaterialTheme.typography.titleMedium)
-    Text("Title: ${gift.title}")
-    Text("Budget: ${gift.budget?.let { "£$it" } ?: "N/A"}")
+    OutlinedTextField(editableTitle, { editableTitle = it }, label = { Text("Title") })
+    OutlinedTextField(editableEvent, { editableEvent = it }, label = { Text("Event") })
+    OutlinedTextField(editableBudget, { editableBudget = it }, label = { Text("Budget (£)") })
+    OutlinedTextField(editableComments, { editableComments = it }, label = { Text("Comments") })
+
+    Text("Status")
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        GiftStatus.entries.forEach { status ->
+            Button(onClick = { selectedStatus = status }) {
+                Text(if (selectedStatus == status) "✓ ${status.name}" else status.name)
+            }
+        }
+    }
+    Spacer(Modifier.height(6.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = {
+            onUpdateGift(
+                gift.copy(
+                    title = editableTitle,
+                    eventType = editableEvent,
+                    budget = editableBudget.toIntOrNull(),
+                    comments = editableComments,
+                    status = selectedStatus
+                )
+            )
+        }) { Text("Update") }
+        Button(onClick = { onDeleteGift(gift.id) }) { Text("Delete") }
+    }
     Spacer(Modifier.height(6.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = {

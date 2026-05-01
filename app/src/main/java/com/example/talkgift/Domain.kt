@@ -11,8 +11,16 @@ data class Gift(
     val personId: Int,
     val eventType: String,
     val title: String,
-    val budget: Int?
+    val budget: Int?,
+    val comments: String = "",
+    val status: GiftStatus = GiftStatus.IDEA
 )
+
+enum class GiftStatus {
+    IDEA,
+    ORDERED,
+    DELIVERED
+}
 
 data class ParsedGiftDraft(
     val person: String,
