@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -115,11 +116,28 @@ private fun GiftCaptureApp(
         ) {
             Text("TalkGift", style = MaterialTheme.typography.headlineMedium)
             CaptureCard(parsedDraft, onDraftChange, onStartCapture, onSaveDraft)
+            BudgetSummary(gifts = gifts)
             PersonList(people = people, gifts = gifts, onSelect = { selectedPerson = it; selectedGift = null })
             selectedPerson?.let { person ->
                 GiftList(person = person, gifts = gifts.filter { it.personId == person.id }, onSelect = { selectedGift = it })
             }
             selectedGift?.let { GiftDetail(it) }
+        }
+    }
+}
+
+@Composable
+private fun BudgetSummary(gifts: List<Gift>) {
+    val totalBudget = gifts.sumOf { it.budget ?: 0 }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Budget tracker", style = MaterialTheme.typography.titleMedium)
+            Text("Total budget: £$totalBudget")
+            Text("Individual gifts")
+            gifts.forEach { gift ->
+                val budgetText = gift.budget?.let { "£$it" } ?: "Not set"
+                Text("• ${gift.title}: $budgetText")
+            }
         }
     }
 }
@@ -150,6 +168,8 @@ private fun PersonList(people: List<Person>, gifts: List<Gift>, onSelect: (Perso
     Text("People", style = MaterialTheme.typography.titleMedium)
     LazyColumn(modifier = Modifier.height(140.dp)) {
         items(people) { person ->
+            val personGifts = gifts.filter { it.personId == person.id }
+            val personBudget = personGifts.sumOf { it.budget ?: 0 }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -158,8 +178,9 @@ private fun PersonList(people: List<Person>, gifts: List<Gift>, onSelect: (Perso
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(person.name)
-                Text("${gifts.count { it.personId == person.id }} gifts")
+                Text("${personGifts.size} gifts • £$personBudget")
             }
+            HorizontalDivider()
         }
     }
 }
