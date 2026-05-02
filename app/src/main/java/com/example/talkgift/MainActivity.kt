@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.talkgift.ui.theme.TalkGiftTheme
 
 class MainActivity : ComponentActivity() {
@@ -173,13 +175,40 @@ private fun CaptureCard(
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onStartCapture) { Text("🎤 Speak gift") }
-            OutlinedTextField(draft.person, { onDraftChange(draft.copy(person = it)) }, label = { Text("Person") })
-            OutlinedTextField(draft.event, { onDraftChange(draft.copy(event = it)) }, label = { Text("Event") })
-            OutlinedTextField(draft.gift, { onDraftChange(draft.copy(gift = it)) }, label = { Text("Gift") })
-            OutlinedTextField(draft.budget?.toString().orEmpty(), {
-                onDraftChange(draft.copy(budget = it.toIntOrNull()))
-            }, label = { Text("Budget (£)") })
+            Button(
+                onClick = onStartCapture,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) { Text("🎤 Speak gift", style = MaterialTheme.typography.titleMedium, fontSize = 22.sp) }
+            OutlinedTextField(
+                draft.person,
+                { onDraftChange(draft.copy(person = it)) },
+                label = { Text("Person", fontSize = 12.sp) },
+                textStyle = MaterialTheme.typography.bodySmall,
+                singleLine = true
+            )
+            OutlinedTextField(
+                draft.event,
+                { onDraftChange(draft.copy(event = it)) },
+                label = { Text("Event", fontSize = 12.sp) },
+                textStyle = MaterialTheme.typography.bodySmall,
+                singleLine = true
+            )
+            OutlinedTextField(
+                draft.gift,
+                { onDraftChange(draft.copy(gift = it)) },
+                label = { Text("Gift", fontSize = 12.sp) },
+                textStyle = MaterialTheme.typography.bodySmall,
+                singleLine = true
+            )
+            OutlinedTextField(
+                draft.budget?.toString().orEmpty(), {
+                    onDraftChange(draft.copy(budget = it.toIntOrNull()))
+                },
+                label = { Text("Budget (£)", fontSize = 12.sp) },
+                textStyle = MaterialTheme.typography.bodySmall,
+                singleLine = true
+            )
             Button(onClick = { onSaveDraft(draft) }, enabled = draft.gift.isNotBlank()) { Text("Save") }
         }
     }
